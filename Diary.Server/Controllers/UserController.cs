@@ -42,20 +42,6 @@ namespace Diary.Server.Controllers
             this.jwt = jwt;
         }
 
-        [HttpGet("testtoken")]
-        [Authorize]
-        public async Task TestToken()
-        {
-            string? id = await jwt.GetUserIdFromCurrentToken(HttpContext);
-            if (id == null)
-            {
-                Response.StatusCode = 401;
-                return;
-            }
-
-            await Response.WriteAsync($"UserId = ${id}");
-        }
-
         [HttpPost("register")]
         public async Task RegisterUser([FromBody] RegistrationFormData registrationForm)
         {
@@ -97,6 +83,7 @@ namespace Diary.Server.Controllers
             }
 
             string key = cryptoService.DecryptUserKey(user.EncryptedKey, loginForm.Password);
+            Response.Cookies.Append("UserKey", cryptoService.EncryptText(key));
             await Response.WriteAsync(jwt.GenerateToken(user, key));
             
         }

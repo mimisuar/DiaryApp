@@ -4,6 +4,6 @@ namespace Diary.Server.Data
 {
 	public class User : IdentityUser
 	{
-		public byte[] EncryptedKey { get; set; }
+		public string EncryptedKey { get; set; }
 	}
 }

@@ -56,20 +56,5 @@ namespace Diary.Server.Services
 
             return handler.CreateEncodedJwt(descriptor);
         }
-
-        public async Task<string?> GetUserIdFromCurrentToken(HttpContext httpContext)
-        {
-            string? token = await httpContext.GetTokenAsync(JwtBearerDefaults.AuthenticationScheme, "access_token");
-            if (token == null)
-            {
-                logger.LogError("No access token found.");
-                return null;
-            }
-
-            JwtSecurityTokenHandler handler = new();
-
-            JwtSecurityToken jwt = handler.ReadJwtToken(token);
-            return "";
-        }
     }
 }
