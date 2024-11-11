@@ -28,7 +28,7 @@ namespace Diary.Server.Services
         {
             using Aes aes = Aes.Create();
             byte[] passwordKey = GenerateKeyFromPassword(password);
-            return EncryptText(Encoding.UTF8.GetString(aes.Key), passwordKey);
+            return EncryptText(Encoding.ASCII.GetString(aes.Key), passwordKey);
         }
 
         public string DecryptUserKey(string encryptedUserKey, string password)
@@ -61,16 +61,16 @@ namespace Diary.Server.Services
 
             using CryptoStream crypto = new(stream, aes.CreateEncryptor(), CryptoStreamMode.Write);
 
-            byte[] rawData = Encoding.UTF8.GetBytes(text);
+            byte[] rawData = Encoding.ASCII.GetBytes(text);
             crypto.Write(rawData, 0, rawData.Length);
             crypto.FlushFinalBlock();
 
-			return Encoding.UTF8.GetString(stream.ToArray());
+			return Encoding.ASCII.GetString(stream.ToArray());
         }
 
         public string DecryptText(string encryptedText, byte[] encryptionKey)
         {
-            using MemoryStream stream = new(Encoding.UTF8.GetBytes(encryptedText));
+            using MemoryStream stream = new(Encoding.ASCII.GetBytes(encryptedText));
             using Aes aes = Aes.Create();
 
 			byte[] iv = new byte[aes.IV.Length];
