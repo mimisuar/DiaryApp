@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string Title { get; set; } = "";
-        public string EncryptedBody { get; set; } = "";
+        public byte[] EncryptedBody { get; set; } = default!;
         public DateTime CreatedOn { get; set; }
 
         public User Creator { get; set; } = default!;

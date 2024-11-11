@@ -83,7 +83,6 @@ namespace Diary.Server.Controllers
             }
 
             string key = cryptoService.DecryptUserKey(user.EncryptedKey, loginForm.Password);
-            Response.Cookies.Append("UserKey", cryptoService.EncryptText(key));
             await Response.WriteAsync(jwt.GenerateToken(user, key));
             
         }

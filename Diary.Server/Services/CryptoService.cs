@@ -6,13 +6,6 @@ namespace Diary.Server.Services
     public class CryptoService
     {
         private static readonly byte[] salt = { 10, 3, 203, 0, 20, 20 };
-        private readonly byte[] appEncryptionKey;
-
-        public CryptoService(IConfiguration configuration)
-        {
-            string tmp = configuration["Jwt:EncryptionKey"] ?? throw new InvalidOperationException("EncryptionKey not set.");
-            appEncryptionKey = Encoding.ASCII.GetBytes(tmp);
-        }
 
 		private byte[] GenerateKeyFromPassword(string password, int keySize = 32)
         {
@@ -24,30 +17,20 @@ namespace Diary.Server.Services
             return keyGen.GetBytes(keySize);
         }
 
-        public string GenerateUserKey(string password)
+        public byte[] GenerateUserKey(string password)
         {
             using Aes aes = Aes.Create();
             byte[] passwordKey = GenerateKeyFromPassword(password);
             return EncryptText(Encoding.ASCII.GetString(aes.Key), passwordKey);
         }
 
-        public string DecryptUserKey(string encryptedUserKey, string password)
+        public string DecryptUserKey(byte[] encryptedUserKey, string password)
         {
             byte[] passwordKey = GenerateKeyFromPassword(password);
             return DecryptText(encryptedUserKey, passwordKey);
         }
 
-        public string EncryptText(string text)
-        {
-            return EncryptText(text, appEncryptionKey);
-        }
-
-        public string DecryptText(string encryptedText)
-        {
-            return DecryptText(encryptedText, appEncryptionKey);
-        }
-
-        public string EncryptText(string text, byte[] encryptionKey)
+        public byte[] EncryptText(string text, byte[] encryptionKey)
         {
 
             using MemoryStream stream = new();
@@ -65,12 +48,12 @@ namespace Diary.Server.Services
             crypto.Write(rawData, 0, rawData.Length);
             crypto.FlushFinalBlock();
 
-			return Encoding.ASCII.GetString(stream.ToArray());
+			return stream.ToArray();
         }
 
-        public string DecryptText(string encryptedText, byte[] encryptionKey)
+        public string DecryptText(byte[] encryptedText, byte[] encryptionKey)
         {
-            using MemoryStream stream = new(Encoding.ASCII.GetBytes(encryptedText));
+            using MemoryStream stream = new(encryptedText);
             using Aes aes = Aes.Create();
 
 			byte[] iv = new byte[aes.IV.Length];
