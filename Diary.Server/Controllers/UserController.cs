@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Diary.Server.Services;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Diary.Server.Controllers
 {
@@ -25,16 +27,33 @@ namespace Diary.Server.Controllers
         private readonly SignInManager<User> signInManager;
         private readonly CryptoService cryptoService;
         private readonly ILogger<UserController> logger;
+        private readonly JwtService jwt;
 
         public UserController(
             SignInManager<User> signInManager, 
             CryptoService cryptoService,
-            ILogger<UserController> logger
+            ILogger<UserController> logger,
+            JwtService jwt
             )
         {
             this.signInManager = signInManager;
             this.cryptoService = cryptoService;
             this.logger = logger;
+            this.jwt = jwt;
+        }
+
+        [HttpGet("testtoken")]
+        [Authorize]
+        public async Task TestToken()
+        {
+            string? id = await jwt.GetUserIdFromCurrentToken(HttpContext);
+            if (id == null)
+            {
+                Response.StatusCode = 401;
+                return;
+            }
+
+            await Response.WriteAsync($"UserId = ${id}");
         }
 
         [HttpPost("register")]
@@ -65,6 +84,7 @@ namespace Diary.Server.Controllers
             if (user == null)
             {
                 logger.LogError($"Failed to find user with name {loginForm.Username}");
+                Response.StatusCode = 401;
                 return;
             }
 
@@ -72,12 +92,13 @@ namespace Diary.Server.Controllers
             if (result == null || !result.Succeeded)
             {
                 logger.LogError("Failed to sign user in.");
+                Response.StatusCode = 401;
                 return;
             }
 
             string key = cryptoService.DecryptUserKey(user.EncryptedKey, loginForm.Password);
-
-            Response.Cookies.Append("enckey", key, new() { HttpOnly = true });
+            await Response.WriteAsync(jwt.GenerateToken(user, key));
+            
         }
     }
 }
