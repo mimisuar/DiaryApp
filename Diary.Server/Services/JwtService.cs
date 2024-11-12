@@ -24,7 +24,7 @@ namespace Diary.Server.Services
             this.logger = logger;
         }
 
-        public string GenerateToken(User user, string userKey)
+        public string GenerateToken(User user)
         {
             JwtSecurityTokenHandler handler = new();
 
@@ -43,7 +43,6 @@ namespace Diary.Server.Services
             ClaimsIdentity claims = new();
             claims.AddClaim(new Claim(ClaimTypes.Name, user.UserName));
             claims.AddClaim(new Claim("Id", user.Id));
-            claims.AddClaim(new Claim("Key", userKey));
 
             SecurityTokenDescriptor descriptor = new()
             {

@@ -6,6 +6,13 @@ namespace Diary.Server.Services
     public class CryptoService
     {
         private static readonly byte[] salt = { 10, 3, 203, 0, 20, 20 };
+        private readonly byte[] appKey;
+
+        public CryptoService(IConfiguration config)
+        {
+            string key = config["Jwt:EncryptionKey"] ?? throw new InvalidOperationException("EncryptionKey is not set.");
+            appKey = Encoding.ASCII.GetBytes(key);
+        }
 
 		private byte[] GenerateKeyFromPassword(string password, int keySize = 32)
         {
@@ -51,6 +58,11 @@ namespace Diary.Server.Services
 			return stream.ToArray();
         }
 
+        public byte[] EncryptText(string text)
+        {
+            return EncryptText(text, appKey);
+        }
+
         public string DecryptText(byte[] encryptedText, byte[] encryptionKey)
         {
             using MemoryStream stream = new(encryptedText);
@@ -69,5 +81,10 @@ namespace Diary.Server.Services
 
             return reader.ReadToEnd();
 		}
+
+        public string DecryptText(byte[] encryptedText)
+        {
+            return DecryptText(encryptedText, appKey);
+        }
     }
 }
