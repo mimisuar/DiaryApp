@@ -3,10 +3,12 @@ import { useCookies } from "react-cookie";
 import JournalEntry from "./interfaces/journal-entry";
 import { useEffect, useState } from "react";
 import JournalEditor from "./forms/journal-editor";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
     const [cookies] = useCookies(["JWT", "Username", "UserKey"]);
     const [journals, setJournals] = useState<JournalEntry[]>();
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (journals === undefined) {
@@ -49,7 +51,12 @@ function Dashboard() {
     else {
         body = (
             <List>
-                {journals.map(journalEntry => <ListItemButton key={new Date(journalEntry.createdOn).getTime() }>{journalEntry.title}</ListItemButton>)}
+                {journals.map(journalEntry => <ListItemButton
+                    key={new Date(journalEntry.createdOn).getTime()}
+                    onClick={() => navigate(`/view/${journalEntry.id}`)}
+                >
+                    {journalEntry.title}
+                </ListItemButton>)}
             </List>
         );
     }
