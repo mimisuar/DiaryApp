@@ -30,7 +30,7 @@ namespace Diary.Server.Services
             return appDbContext.Journal.Where(journal => journal.CreatorId == user.Id).ToList();
         }
 
-        public async Task<bool> CreateJournal(string username, string title, string body, string userKey)
+        public async Task<bool> CreateJournal(string username, string title, string body, string base64UserKey)
         {
             User? user = await userService.GetUserAsync(username);
             if (user == null)
@@ -39,15 +39,14 @@ namespace Diary.Server.Services
                 return false;
             }
 
-            string decryptedUserKey = cryptoService.DecryptText(Encoding.ASCII.GetBytes(userKey));
-            byte[] userKeyBytes = Encoding.ASCII.GetBytes(decryptedUserKey);
+            byte[] decryptedUserKey = cryptoService.DecryptUserKeyFromClient(base64UserKey);
 
             JournalEntry journalEntry = new()
             {
                 CreatedOn = DateTime.Now,
                 Creator = user,
                 Title = title,
-                EncryptedBody = cryptoService.EncryptText(body, userKeyBytes)
+                EncryptedBody = cryptoService.EncryptJournalBody(body, decryptedUserKey)
             };
 
             appDbContext.Add(journalEntry);

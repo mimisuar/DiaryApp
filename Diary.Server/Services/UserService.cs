@@ -44,7 +44,7 @@ namespace Diary.Server.Services
             User user = new()
             {
                 UserName = username,
-                EncryptedKey = cryptoService.GenerateUserKey(password)
+                EncryptedKey = cryptoService.EncryptUserKeyForDatabase(password)
             };
 
             IdentityResult result = await signInManager.UserManager.CreateAsync(user, password);
@@ -77,11 +77,11 @@ namespace Diary.Server.Services
                 return new() { Success = false };
             }
 
-            string key = cryptoService.DecryptUserKey(user.EncryptedKey, password);
+            byte[] key = cryptoService.DecryptUserKeyFromDatabase(user.EncryptedKey, password);
             return new()
             {
                 Success = true,
-                EncryptedUserKey = Encoding.ASCII.GetString(cryptoService.EncryptText(key)),
+                EncryptedUserKey = cryptoService.EncryptUserKeyForClient(key),
                 JsonWebToken = jwtService.GenerateToken(user)
             };
         }

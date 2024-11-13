@@ -1,11 +1,11 @@
-﻿using System.Security.Cryptography;
+﻿using Diary.Server.Utils;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Diary.Server.Services
 {
     public class CryptoService
     {
-        private static readonly byte[] salt = { 10, 3, 203, 0, 20, 20 };
         private readonly byte[] appKey;
 
         public CryptoService(IConfiguration config)
@@ -14,77 +14,49 @@ namespace Diary.Server.Services
             appKey = Encoding.ASCII.GetBytes(key);
         }
 
-		private byte[] GenerateKeyFromPassword(string password, int keySize = 32)
+        public string EncryptUserKeyForDatabase(string userPassword)
         {
-            Aes aes = Aes.Create();
-   
-            const int iters = 300;
-            Rfc2898DeriveBytes keyGen = new Rfc2898DeriveBytes(password, salt, iters, HashAlgorithmName.SHA256);
+            byte[] userPasswordKey = Crypto.GenerateKey(userPassword);
+            byte[] userKey;
+            using (Aes aes = Aes.Create())
+            {
+                userKey = aes.Key;
+            }
 
-            return keyGen.GetBytes(keySize);
+            byte[] encryptedUserKey = Crypto.Encrypt(userKey, userPasswordKey);
+            return Convert.ToBase64String(encryptedUserKey);
         }
 
-        public byte[] GenerateUserKey(string password)
+        public byte[] DecryptUserKeyFromDatabase(string base64UserKey, string userPassword)
         {
-            using Aes aes = Aes.Create();
-            byte[] passwordKey = GenerateKeyFromPassword(password);
-            return EncryptText(Encoding.ASCII.GetString(aes.Key), passwordKey);
+            byte[] userPasswordKey = Crypto.GenerateKey(userPassword);
+            byte[] decodedUserKey = Convert.FromBase64String(base64UserKey);
+
+            return Crypto.Decrypt(decodedUserKey, userPasswordKey);
         }
 
-        public string DecryptUserKey(byte[] encryptedUserKey, string password)
+        public string EncryptUserKeyForClient(byte[] userKey)
         {
-            byte[] passwordKey = GenerateKeyFromPassword(password);
-            return DecryptText(encryptedUserKey, passwordKey);
+            return Convert.ToBase64String(Crypto.Encrypt(userKey, appKey));
         }
 
-        public byte[] EncryptText(string text, byte[] encryptionKey)
+        public byte[] DecryptUserKeyFromClient(string base64UserKey)
         {
-
-            using MemoryStream stream = new();
-
-            using Aes aes = Aes.Create();
-			byte[] iv = aes.IV;
-			byte[] key = encryptionKey;
-			aes.Key = key;
-
-            stream.Write(iv, 0, iv.Length);
-
-            using CryptoStream crypto = new(stream, aes.CreateEncryptor(), CryptoStreamMode.Write);
-
-            byte[] rawData = Encoding.ASCII.GetBytes(text);
-            crypto.Write(rawData, 0, rawData.Length);
-            crypto.FlushFinalBlock();
-
-			return stream.ToArray();
+            return Crypto.Decrypt(Convert.FromBase64String(base64UserKey), appKey);
         }
 
-        public byte[] EncryptText(string text)
+        public string EncryptJournalBody(string body, byte[] userKey)
         {
-            return EncryptText(text, appKey);
+            byte[] rawBody = Encoding.UTF8.GetBytes(body);
+            byte[] encrypted = Crypto.Encrypt(rawBody, userKey);
+            return Convert.ToBase64String(encrypted);
         }
 
-        public string DecryptText(byte[] encryptedText, byte[] encryptionKey)
+        public string DecryptJournalBody(string base64Body, byte[] userKey)
         {
-            using MemoryStream stream = new(encryptedText);
-            using Aes aes = Aes.Create();
-
-			byte[] iv = new byte[aes.IV.Length];
-			byte[] key = encryptionKey;
-
-            stream.Read(iv, 0, iv.Length);
-
-			aes.Key = key;
-			aes.IV = iv;
-
-            using CryptoStream crypto = new(stream, aes.CreateDecryptor(), CryptoStreamMode.Read);
-            using StreamReader reader = new(crypto);
-
-            return reader.ReadToEnd();
-		}
-
-        public string DecryptText(byte[] encryptedText)
-        {
-            return DecryptText(encryptedText, appKey);
+            byte[] decoded = Convert.FromBase64String(base64Body);
+            byte[] decrypted = Crypto.Decrypt(decoded, userKey);
+            return Encoding.UTF8.GetString(decrypted);
         }
     }
 }
