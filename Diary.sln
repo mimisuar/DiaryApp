@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diary.Server", "Diary.Server\Diary.Server.csproj", "{D2D34AC7-D78E-4358-83B2-2D4A578A4057}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Diary.Server", "Diary.Server\Diary.Server.csproj", "{D2D34AC7-D78E-4358-83B2-2D4A578A4057}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "diary.client", "diary.client\diary.client.esproj", "{8FB3E517-A81C-4019-B0E1-6F5D3A7A7B3D}"
 EndProject

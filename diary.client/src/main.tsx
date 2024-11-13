@@ -2,10 +2,16 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import LoginForm from './forms/login-form.tsx'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import RegisterForm from './forms/register-form.tsx'
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <LoginForm/>
-  </StrictMode>,
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<App />} />
+                <Route path="register" element={<RegisterForm />}/>
+            </Routes>
+        </BrowserRouter>
+    </StrictMode>
 )

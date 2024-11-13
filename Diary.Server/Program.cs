@@ -94,6 +94,8 @@ namespace Diary.Server
 
             builder.Services.AddScoped<CryptoService>();
 			builder.Services.AddScoped<JwtService>();
+			builder.Services.AddScoped<UserService>();
+			builder.Services.AddScoped<JournalService>();
 
             var app = builder.Build();
 

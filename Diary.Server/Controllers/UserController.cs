@@ -5,6 +5,8 @@ using Diary.Server.Services;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
+using System.Net;
+using System.Security.Claims;
 
 namespace Diary.Server.Controllers
 {
@@ -24,68 +26,50 @@ namespace Diary.Server.Controllers
     [Route("[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly SignInManager<User> signInManager;
-        private readonly CryptoService cryptoService;
-        private readonly ILogger<UserController> logger;
-        private readonly JwtService jwt;
+        private readonly UserService userService;
 
         public UserController(
-            SignInManager<User> signInManager, 
-            CryptoService cryptoService,
-            ILogger<UserController> logger,
-            JwtService jwt
+            UserService userService
             )
         {
-            this.signInManager = signInManager;
-            this.cryptoService = cryptoService;
-            this.logger = logger;
-            this.jwt = jwt;
+            this.userService = userService;
         }
 
         [HttpPost("register")]
+        [Consumes("application/json")]
         public async Task RegisterUser([FromBody] RegistrationFormData registrationForm)
         {
-            User user = new()
+            if (!await userService.RegisterUser(registrationForm.Username, registrationForm.Password))
             {
-                UserName = registrationForm.Username,
-                EncryptedKey = cryptoService.GenerateUserKey(registrationForm.Password)
-            };
-
-            IdentityResult result = await signInManager.UserManager.CreateAsync(user, registrationForm.Password);
-            if (!result.Succeeded)
-            {
-                logger.LogError("Failed to creater user.");
-                foreach (IdentityError error in result.Errors)
-                {
-                    logger.LogError(error.Description);
-                }
+                Response.StatusCode = 401;
                 return;
             }
         }
 
         [HttpPost("login")]
+        [Consumes("application/json")]
         public async Task LoginUser([FromBody] LoginFormData loginForm)
         {
-            User? user = await signInManager.UserManager.FindByNameAsync(loginForm.Username);
-            if (user == null)
+            UserLoginResult result = await userService.LoginUser(loginForm.Username, loginForm.Password);
+
+            if (!result.Success)
             {
-                logger.LogError($"Failed to find user with name {loginForm.Username}");
                 Response.StatusCode = 401;
                 return;
             }
 
-            var result = await signInManager.PasswordSignInAsync(user, loginForm.Password, isPersistent: false, lockoutOnFailure: false);
-            if (result == null || !result.Succeeded)
-            {
-                logger.LogError("Failed to sign user in.");
-                Response.StatusCode = 401;
-                return;
-            }
+            Response.Cookies.Append("UserKey", result.EncryptedUserKey!);
+            Response.Cookies.Append("JWT", result.JsonWebToken!);
+            Response.Cookies.Append("Username", loginForm.Username);
+        }
 
-            string key = cryptoService.DecryptUserKey(user.EncryptedKey, loginForm.Password);
-            Response.Cookies.Append("UserKey", Encoding.UTF8.GetString(cryptoService.EncryptText(key)));
-            await Response.WriteAsync(jwt.GenerateToken(user, key));
-            
+        [HttpPost("logout")]
+        public async Task LogoutUser()
+        {
+            await userService.LogoutUser();
+            Response.Cookies.Delete("UserKey");
+            Response.Cookies.Delete("JWT");
+            Response.Cookies.Delete("Username");
         }
     }
 }
