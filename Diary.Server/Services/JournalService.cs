@@ -3,6 +3,12 @@ using System.Text;
 
 namespace Diary.Server.Services
 {
+    public struct JournalEntryView
+    {
+        public string Title { get; set; }
+        public string Body { get; set; }
+        public DateTime CreatedOn { get; set; }
+    }
     public class JournalService
     {
         private readonly UserService userService;
@@ -52,6 +58,35 @@ namespace Diary.Server.Services
             appDbContext.Add(journalEntry);
             await appDbContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<JournalEntryView?> GetJournal(string username, int journalId, string base64UserKey)
+        {
+            User? user = await userService.GetUserAsync(username);
+            if (user == null)
+            {
+                logger.LogError($"Unable to find user with name ${username}");
+                return null;
+            }
+
+            JournalEntry entry;
+            try
+            {
+                entry = appDbContext.Journal.Single(j => j.CreatorId == user.Id && j.Id == journalId);
+            }
+            catch
+            {
+                logger.LogError("Failed to find valid journal.");
+                return null;
+            }
+            byte[] decryptedUserKey = cryptoService.DecryptUserKeyFromClient(base64UserKey);
+
+            return new()
+            {
+                Body = cryptoService.DecryptJournalBody(entry.EncryptedBody, decryptedUserKey),
+                Title = entry.Title,
+                CreatedOn = entry.CreatedOn
+            };
         }
     }
 }

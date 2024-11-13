@@ -14,6 +14,13 @@ namespace Diary.Server.Controllers
         public string EncryptedKey { get; set; }
     }
 
+    public struct JournalViewData
+    {
+        public string Username { get; set; }
+        public int JournalId { get; set; }
+        public string EncryptedKey { get; set; }
+    }
+
     [ApiController]
     [Route("[controller]")]
     public class JournalController : ControllerBase
@@ -50,6 +57,20 @@ namespace Diary.Server.Controllers
                 await Response.WriteAsync("Unable to create journal.");
                 return;
             }
+        }
+
+        [HttpPost("view/{id}")]
+        [Authorize]
+        public async Task<JournalEntryView?> ViewUserJournal([FromBody] JournalViewData journalView)
+        {
+            JournalEntryView? view = await journalService.GetJournal(journalView.Username, journalView.JournalId, journalView.EncryptedKey);
+            if (view == null)
+            {
+                Response.StatusCode = 401;
+                return null;
+            }
+
+            return view;
         }
     }
 }

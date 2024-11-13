@@ -1,4 +1,4 @@
-import { Button, CircularProgress, Stack } from "@mui/material";
+import { Button, CircularProgress, Stack, List, ListItemButton} from "@mui/material";
 import { useCookies } from "react-cookie";
 import JournalEntry from "./interfaces/journal-entry";
 import { useEffect, useState } from "react";
@@ -47,7 +47,11 @@ function Dashboard() {
         body = <p>No journals found. Make one!</p>
     }
     else {
-        body = <p>This is where my journals go</p>
+        body = (
+            <List>
+                {journals.map(journalEntry => <ListItemButton key={new Date(journalEntry.createdOn).getTime() }>{journalEntry.title}</ListItemButton>)}
+            </List>
+        );
     }
 
     return (
